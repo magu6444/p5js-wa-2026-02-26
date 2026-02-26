@@ -1,14 +1,11 @@
-let mic;
 let creatures = [];
 const numCreatures = 50; // 画面内のキャラクター数
-const screamThreshold = 0.08; // この音量を超えるとパニックになる
-let isScreaming = false;
 let audioStarted = false;
 let panicSound; // パニック時に再生するサウンドオブジェクト
 
 // 高速タッチ検知用の変数
 let touchTimestamps = [];
-const touchThreshold = 16; // 1秒間に16回以上のタッチ
+const touchThreshold = 10; // 1秒間に10回以上のタッチ
 
 // 音源ファイルを読み込みます
 function preload() {
@@ -18,7 +15,7 @@ function preload() {
 // 初期設定
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    
+
     // キャラクターを生成
     for (let i = 0; i < numCreatures; i++) {
         if (random() > 0.2) {
@@ -33,25 +30,13 @@ function setup() {
 function draw() {
     background(255);
 
-    // オーディオが開始されている場合のみ音量を取得
-    if (audioStarted && mic) {
-        let micLevel = mic.getLevel();
-
-        // isScreamingではなく、サウンドが再生中かどうかで判断するように変更
-        if (micLevel > screamThreshold && !panicSound.isPlaying()) {
-            panicSound.play();
-            for (let creature of creatures) {
-                // 音源の長さをパニック時間に設定
-                creature.frighten(panicSound.duration());
-            }
-        }
-    }
+    // 全てのキャラクターを更新して表示
 
     // タッチによるパニック判定
     let now = millis();
     // 1秒以上前のタイムスタンプを削除
     touchTimestamps = touchTimestamps.filter(t => now - t < 1000);
-    
+
     // 2本指以上かつ、1秒間のタッチ回数が閾値を超えている場合
     if (touches.length >= 2 && touchTimestamps.length >= touchThreshold) {
         if (!panicSound.isPlaying()) {
@@ -72,7 +57,7 @@ function draw() {
         creature.update();
         creature.display();
     }
-    
+
     // サウンドが再生中の場合のみ文字を表示
     if (panicSound.isPlaying()) {
         fill(0);
@@ -81,21 +66,21 @@ function draw() {
         textAlign(CENTER, TOP);
         text('「わーっ！」', width / 2, 20);
     }
-    
+
     // オーディオが開始されていない場合、クリックを促すメッセージを表示
     if (!audioStarted) {
         // 背景を真っ黒に
         background(0);
-        
+
         // 文字の代わりにマウスカーソルのイラストを描画します
         push();
         translate(width / 2, height / 2);
         // カーソルのサイズを小さくしました
-        scale(1.5); 
+        scale(1.5);
         fill(255);
         stroke(0);
         strokeWeight(1.5);
-        
+
         beginShape();
         vertex(-8, -12);
         vertex(-8, 10);
@@ -105,7 +90,7 @@ function draw() {
         vertex(0, 2);
         vertex(7, 1);
         endShape(CLOSE);
-        
+
         pop();
     }
 }
@@ -114,8 +99,6 @@ function draw() {
 function mousePressed() {
     if (!audioStarted) {
         userStartAudio();
-        mic = new p5.AudioIn();
-        mic.start();
         audioStarted = true;
     }
 }
@@ -124,12 +107,10 @@ function mousePressed() {
 function touchStarted() {
     if (!audioStarted) {
         userStartAudio();
-        mic = new p5.AudioIn();
-        mic.start();
         audioStarted = true;
         return false; // デフォルトの動作を防止
     }
-    
+
     // タイムスタンプを記録
     touchTimestamps.push(millis());
     return false; // ズームやスクロールなどのデフォルト動作を防止
@@ -147,13 +128,13 @@ class Creature {
         this.pos = createVector(random(width), random(height));
         this.size = random(25, 40);
         this.scareTimer = 0;
-        
+
         // 通常時の歩行パターンをランダムに決定
         this.walkPattern = floor(random(4));
         this.walkSpeed = createVector(0, 0);
         this.setRandomWalkSpeed();
     }
-    
+
     // ランダムな歩行速度を設定
     setRandomWalkSpeed() {
         const speed = random(0.2, 0.8); // 歩行スピードを遅くしました
@@ -165,11 +146,11 @@ class Creature {
                 this.walkSpeed = createVector(random([-speed, speed]), 0);
                 break;
             case 2: // 水平・垂直に歩く
-                 if (random() > 0.5) {
+                if (random() > 0.5) {
                     this.walkSpeed = createVector(0, random([-speed, speed]));
-                 } else {
+                } else {
                     this.walkSpeed = createVector(random([-speed, speed]), 0);
-                 }
+                }
                 break;
             case 3: // ランダムに歩く
                 this.walkSpeed = p5.Vector.random2D().mult(speed);
@@ -199,7 +180,7 @@ class Creature {
         this.pos.add(this.walkSpeed);
         // たまに方向転換
         if (frameCount % 100 === 0 && random() > 0.8) {
-             this.setRandomWalkSpeed();
+            this.setRandomWalkSpeed();
         }
     }
 
@@ -207,7 +188,7 @@ class Creature {
     panic() {
         // to be overridden
     }
-    
+
     // 画面外に出ないようにする
     constrainToScreen() {
         if (this.pos.x > width + this.size) this.pos.x = -this.size;
@@ -271,7 +252,7 @@ class Person extends Creature {
             const walkCycle = sin(frameCount * 0.08 + this.pos.x / 10);
             const armSwing = walkCycle * s * 0.15;
             const legSwing = walkCycle * s * 0.25;
-            
+
             // 腕
             line(0, 0, -armSwing, s * 0.2); // 左腕
             line(0, 0, armSwing, s * 0.2);  // 右腕
@@ -302,7 +283,7 @@ class Dog extends Creature {
         stroke(0);
         strokeWeight(3);
         noFill();
-        
+
         const s = this.size;
         const d = this.walkSpeed.x > 0 ? 1 : -1;
 
