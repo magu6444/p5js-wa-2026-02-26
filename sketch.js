@@ -114,6 +114,17 @@ function touchStarted() {
 
     // タイムスタンプを記録
     touchTimestamps.push(millis());
+
+    // タッチした場所の近くにいるキャラクターだけを慌てさせる
+    for (let t of touches) {
+        for (let creature of creatures) {
+            let d = dist(t.x, t.y, creature.pos.x, creature.pos.y);
+            if (d < 100) {
+                creature.frighten(1.5); // タッチ地点から100px以内なら1.5秒間パニック
+            }
+        }
+    }
+
     return false; // ズームやスクロールなどのデフォルト動作を防止
 }
 
