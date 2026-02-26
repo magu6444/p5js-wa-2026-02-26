@@ -40,15 +40,10 @@ function draw() {
     // 2本指以上かつ、1秒間のタッチ回数が閾値を超えている場合
     if (touches.length >= 2 && touchTimestamps.length >= touchThreshold) {
         if (!panicSound.isPlaying()) {
-            panicSound.loop(); // 高速タッチ中はループ再生
-        }
-        for (let creature of creatures) {
-            creature.frighten(0.2); // 短いパニック時間を継続的に与える
-        }
-    } else if (touches.length === 0 || touchTimestamps.length < touchThreshold) {
-        // 高速タッチが止まったら音を止める（マイク由来の再生でない場合）
-        if (panicSound.isPlaying() && panicSound.isLooping()) {
-            panicSound.stop();
+            panicSound.play(); // 条件達成時に1回再生（最後まで流し切る）
+            for (let creature of creatures) {
+                creature.frighten(panicSound.duration()); // サウンドの長さに合わせてパニック
+            }
         }
     }
 
