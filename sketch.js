@@ -7,6 +7,9 @@ let panicSound; // パニック時に再生するサウンドオブジェクト
 let touchTimestamps = [];
 const touchThreshold = 10; // 1秒間に10回以上のタッチ
 
+// 視覚的フィードバック用の変数
+let ripples = [];
+
 // 音源ファイルを読み込みます
 function preload() {
     panicSound = loadSound('se_drumroll03.mp3');
@@ -51,6 +54,20 @@ function draw() {
     for (let creature of creatures) {
         creature.update();
         creature.display();
+    }
+
+    // 波紋エフェクトの描画と更新
+    for (let i = ripples.length - 1; i >= 0; i--) {
+        let r = ripples[i];
+        noFill();
+        stroke(0, 0, 0, r.alpha);
+        strokeWeight(2);
+        ellipse(r.x, r.y, r.d, r.d);
+        r.d += 4;
+        r.alpha -= 10;
+        if (r.alpha <= 0) {
+            ripples.splice(i, 1);
+        }
     }
 
     // サウンドが再生中の場合のみ文字を表示
@@ -102,7 +119,7 @@ function mousePressed() {
         userStartAudio();
         audioStarted = true;
     }
-    // クリック地点の近くをパニックに
+    // クリック地点をパニックに（座標を確実に取得）
     triggerLocalPanic(mouseX, mouseY);
 }
 
@@ -116,23 +133,27 @@ function touchStarted() {
     // タイムスタンプを記録
     touchTimestamps.push(millis());
 
-    // タッチした場所の近くにいるキャラクターを慌てさせる
-    if (touches.length > 0) {
-        for (let t of touches) {
-            triggerLocalPanic(t.x, t.y);
+    // タッチした全ての場所の近くにいるキャラクターを慌てさせる
+    if (touches && touches.length > 0) {
+        for (let i = 0; i < touches.length; i++) {
+            triggerLocalPanic(touches[i].x, touches[i].y);
         }
     } else {
+        // touches配列が空の場合でも、現在の座標で判定
         triggerLocalPanic(mouseX, mouseY);
     }
 
-    return false; // ズームやスクロールなどのデフォルト動作を防止
+    return false; // デフォルトの動作を防止
 }
 
 // 特定の座標の近くにいるキャラクターを慌てさせる共通関数
 function triggerLocalPanic(x, y) {
+    // 波紋を追加（視覚的フィードバック）
+    ripples.push({ x: x, y: y, d: 20, alpha: 150 });
+
     for (let creature of creatures) {
         let d = dist(x, y, creature.pos.x, creature.pos.y);
-        if (d < 120) { // 範囲を120pxに拡大
+        if (d < 150) { // 範囲を150pxに拡大
             creature.frighten(1.5);
         }
     }
