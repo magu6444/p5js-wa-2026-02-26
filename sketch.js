@@ -92,6 +92,12 @@ function draw() {
         endShape(CLOSE);
 
         pop();
+
+        fill(255);
+        noStroke();
+        textSize(24);
+        textAlign(CENTER, CENTER);
+        text('Touch to Start', width / 2, height / 2 + 80);
     }
 }
 
