@@ -36,7 +36,15 @@ function setup() {
 function draw() {
     background(255);
 
-    // 全てのキャラクターを更新して表示
+    // ドラムロールが終了した瞬間に全キャラクターのパニック状態をリセット
+    // (更新処理の前にこれを行うことで、停止タイミングを完璧に同期させる)
+    if (panicSoundWasPlaying && !panicSound.isPlaying()) {
+        for (let creature of creatures) {
+            creature.scareTimer = 0;
+        }
+    }
+    // 現在の状態を記録
+    panicSoundWasPlaying = panicSound.isPlaying();
 
     // タッチによるパニック判定
     let now = millis();
@@ -58,15 +66,6 @@ function draw() {
         creature.update();
         creature.display();
     }
-
-    // ドラムロールが終了した瞬間に全キャラクターのパニック状態をリセット
-    if (panicSoundWasPlaying && !panicSound.isPlaying()) {
-        for (let creature of creatures) {
-            creature.scareTimer = 0;
-        }
-    }
-    // 現在の状態を記録
-    panicSoundWasPlaying = panicSound.isPlaying();
 
     // 波紋エフェクトの描画と更新
     for (let i = ripples.length - 1; i >= 0; i--) {
@@ -213,6 +212,11 @@ class Creature {
         }
     }
 
+    // パニック中かどうかの判定（サウンド再生中、または個別タイマが有効な場合）
+    isPanicking() {
+        return panicSound.isPlaying() || this.scareTimer > 0;
+    }
+
     // 驚いた時の処理
     frighten(durationInSeconds) {
         // 秒数をフレーム数に変換 (60fpsを想定)
@@ -221,8 +225,8 @@ class Creature {
 
     // 状態の更新
     update() {
-        // ドラムロールが鳴っている間、または個別のパニックタイマーが有効な間はパニック状態
-        if (panicSound.isPlaying() || this.scareTimer > 0) {
+        // 音が鳴っているか、タイマーがある間はパニック動作
+        if (this.isPanicking()) {
             this.panic();
             if (this.scareTimer > 0) {
                 this.scareTimer--;
@@ -299,7 +303,7 @@ class Person extends Creature {
         ellipse(0, -s * 0.35, s * 0.3, s * 0.3); // 頭
         line(0, -s * 0.2, 0, s * 0.2); // 体
 
-        if (this.scareTimer > 0) { // パニック中の手足
+        if (this.isPanicking()) { // パニック中の手足
             let angle = frameCount * 0.5;
             line(0, 0, -s * 0.3 * cos(angle), -s * 0.3 * sin(angle)); // 左腕
             line(0, 0, s * 0.3 * cos(angle), s * 0.3 * sin(angle)); // 右腕
@@ -345,7 +349,7 @@ class Dog extends Creature {
         const s = this.size;
         const d = this.walkSpeed.x > 0 ? 1 : -1;
 
-        if (this.scareTimer > 0) { // パニック中の描画
+        if (this.isPanicking()) { // パニック中の描画
             const barkAnim = sin(frameCount * 0.9);
             line(-s * 0.4 * d, barkAnim, s * 0.4 * d, 0); // 体
             ellipse(s * 0.5 * d + barkAnim * 2, -s * 0.1, s * 0.3, s * 0.3); // 頭
