@@ -6,6 +6,10 @@ let isScreaming = false;
 let audioStarted = false;
 let panicSound; // パニック時に再生するサウンドオブジェクト
 
+// 高速タッチ検知用の変数
+let touchTimestamps = [];
+const touchThreshold = 16; // 1秒間に16回以上のタッチ
+
 // 音源ファイルを読み込みます
 function preload() {
     panicSound = loadSound('se_drumroll03.mp3');
@@ -40,6 +44,26 @@ function draw() {
                 // 音源の長さをパニック時間に設定
                 creature.frighten(panicSound.duration());
             }
+        }
+    }
+
+    // タッチによるパニック判定
+    let now = millis();
+    // 1秒以上前のタイムスタンプを削除
+    touchTimestamps = touchTimestamps.filter(t => now - t < 1000);
+    
+    // 2本指以上かつ、1秒間のタッチ回数が閾値を超えている場合
+    if (touches.length >= 2 && touchTimestamps.length >= touchThreshold) {
+        if (!panicSound.isPlaying()) {
+            panicSound.loop(); // 高速タッチ中はループ再生
+        }
+        for (let creature of creatures) {
+            creature.frighten(0.2); // 短いパニック時間を継続的に与える
+        }
+    } else if (touches.length === 0 || touchTimestamps.length < touchThreshold) {
+        // 高速タッチが止まったら音を止める（マイク由来の再生でない場合）
+        if (panicSound.isPlaying() && panicSound.isLooping()) {
+            panicSound.stop();
         }
     }
 
@@ -94,6 +118,21 @@ function mousePressed() {
         mic.start();
         audioStarted = true;
     }
+}
+
+// タッチ開始時（iPad用）
+function touchStarted() {
+    if (!audioStarted) {
+        userStartAudio();
+        mic = new p5.AudioIn();
+        mic.start();
+        audioStarted = true;
+        return false; // デフォルトの動作を防止
+    }
+    
+    // タイムスタンプを記録
+    touchTimestamps.push(millis());
+    return false; // ズームやスクロールなどのデフォルト動作を防止
 }
 
 
