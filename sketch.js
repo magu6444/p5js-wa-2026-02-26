@@ -102,6 +102,8 @@ function mousePressed() {
         userStartAudio();
         audioStarted = true;
     }
+    // クリック地点の近くをパニックに
+    triggerLocalPanic(mouseX, mouseY);
 }
 
 // タッチ開始時（iPad用）
@@ -109,23 +111,31 @@ function touchStarted() {
     if (!audioStarted) {
         userStartAudio();
         audioStarted = true;
-        return false; // デフォルトの動作を防止
     }
 
     // タイムスタンプを記録
     touchTimestamps.push(millis());
 
-    // タッチした場所の近くにいるキャラクターだけを慌てさせる
-    for (let t of touches) {
-        for (let creature of creatures) {
-            let d = dist(t.x, t.y, creature.pos.x, creature.pos.y);
-            if (d < 100) {
-                creature.frighten(1.5); // タッチ地点から100px以内なら1.5秒間パニック
-            }
+    // タッチした場所の近くにいるキャラクターを慌てさせる
+    if (touches.length > 0) {
+        for (let t of touches) {
+            triggerLocalPanic(t.x, t.y);
         }
+    } else {
+        triggerLocalPanic(mouseX, mouseY);
     }
 
     return false; // ズームやスクロールなどのデフォルト動作を防止
+}
+
+// 特定の座標の近くにいるキャラクターを慌てさせる共通関数
+function triggerLocalPanic(x, y) {
+    for (let creature of creatures) {
+        let d = dist(x, y, creature.pos.x, creature.pos.y);
+        if (d < 120) { // 範囲を120pxに拡大
+            creature.frighten(1.5);
+        }
+    }
 }
 
 
