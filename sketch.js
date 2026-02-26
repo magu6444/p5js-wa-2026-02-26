@@ -10,6 +10,9 @@ const touchThreshold = 10; // 1秒間に10回以上のタッチ
 // 視覚的フィードバック用の変数
 let ripples = [];
 
+// サウンドの状態管理用
+let panicSoundWasPlaying = false;
+
 // 音源ファイルを読み込みます
 function preload() {
     panicSound = loadSound('se_drumroll03.mp3');
@@ -55,6 +58,15 @@ function draw() {
         creature.update();
         creature.display();
     }
+
+    // ドラムロールが終了した瞬間に全キャラクターのパニック状態をリセット
+    if (panicSoundWasPlaying && !panicSound.isPlaying()) {
+        for (let creature of creatures) {
+            creature.scareTimer = 0;
+        }
+    }
+    // 現在の状態を記録
+    panicSoundWasPlaying = panicSound.isPlaying();
 
     // 波紋エフェクトの描画と更新
     for (let i = ripples.length - 1; i >= 0; i--) {
@@ -209,9 +221,12 @@ class Creature {
 
     // 状態の更新
     update() {
-        if (this.scareTimer > 0) {
+        // ドラムロールが鳴っている間、または個別のパニックタイマーが有効な間はパニック状態
+        if (panicSound.isPlaying() || this.scareTimer > 0) {
             this.panic();
-            this.scareTimer--;
+            if (this.scareTimer > 0) {
+                this.scareTimer--;
+            }
         } else {
             this.walk();
         }
