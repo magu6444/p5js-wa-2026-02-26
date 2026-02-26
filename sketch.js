@@ -164,7 +164,7 @@ function triggerLocalPanic(x, y) {
 
     for (let creature of creatures) {
         let d = dist(x, y, creature.pos.x, creature.pos.y);
-        if (d < 80) { // 判定範囲を80pxに縮小（よりピンポイントに）
+        if (d < 40) { // 判定範囲を40pxに縮小（超ピンポイント）
             creature.frighten(1.5);
         }
     }
